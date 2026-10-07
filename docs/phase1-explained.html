@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 1 Explained</title>
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --surface: #ffffff;
+    --surface-2: #f3f1ec;
+    --text: #1f2328;
+    --muted: #5b616b;
+    --border: #e2ded6;
+    --accent: #2f6fdb;
+    --accent-soft: #e6eefc;
+    --good: #1f7a4d;
+    --good-soft: #e3f4ea;
+    --warn: #9a5b00;
+    --warn-soft: #fbefd9;
+    --code-bg: #f1efe9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a;
+      --surface: #1c1f23;
+      --surface-2: #23272c;
+      --text: #e6e8eb;
+      --muted: #a1a8b3;
+      --border: #33383f;
+      --accent: #7aa7ff;
+      --accent-soft: #1e2a40;
+      --good: #6fd19c;
+      --good-soft: #17301f;
+      --warn: #f0b860;
+      --warn-soft: #36290f;
+      --code-bg: #262a30;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a;
+    --surface: #1c1f23;
+    --surface-2: #23272c;
+    --text: #e6e8eb;
+    --muted: #a1a8b3;
+    --border: #33383f;
+    --accent: #7aa7ff;
+    --accent-soft: #1e2a40;
+    --good: #6fd19c;
+    --good-soft: #17301f;
+    --warn: #f0b860;
+    --warn-soft: #36290f;
+    --code-bg: #262a30;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 780px; margin: 0 auto; padding: 40px 16px 80px; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 8px; }
+  h2 { font-size: 1.4rem; margin: 56px 0 12px; padding-top: 8px; border-top: 1px solid var(--border); }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p { margin: 0 0 14px; }
+  .lede { color: var(--muted); font-size: 1.05rem; margin-bottom: 24px; }
+  a { color: var(--accent); }
+  code {
+    font: 0.88em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    overflow-wrap: anywhere;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font: 0.84rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    margin: 0 0 16px;
+  }
+  pre code { background: none; padding: 0; }
+
+  nav.toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 0 0 8px;
+  }
+  nav.toc ol { margin: 6px 0 0; padding-left: 22px; columns: 2; column-gap: 28px; }
+  nav.toc li { break-inside: avoid; }
+  @media (max-width: 560px) { nav.toc ol { columns: 1; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 0 0 16px;
+  }
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 0 0 16px;
+  }
+  .callout.good { border-color: var(--good); background: var(--good-soft); }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* Before/after comparison */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  @media (max-width: 600px) { .compare { grid-template-columns: 1fr; } }
+  .compare h4 { margin: 0 0 6px; font-size: 1rem; }
+  .compare p { font-size: 0.95rem; color: var(--muted); }
+
+  /* Flow diagram */
+  .flow { display: flex; flex-direction: column; align-items: stretch; gap: 0; margin: 8px 0 18px; }
+  .box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+  .box .role {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 2px 9px;
+    margin-bottom: 4px;
+  }
+  .box strong { display: block; }
+  .box span.desc { color: var(--muted); font-size: 0.93rem; }
+  .arrow {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 6px 0;
+  }
+  .arrow::before { content: "↓"; display: block; font-size: 1.2rem; line-height: 1; color: var(--accent); }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 0 0 16px; border: 1px solid var(--border); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; background: var(--surface); }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--surface-2); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+
+  /* Timeline */
+  ol.steps { list-style: none; padding: 0; margin: 0 0 16px; counter-reset: step; }
+  ol.steps > li {
+    position: relative;
+    padding: 0 0 18px 46px;
+    counter-increment: step;
+  }
+  ol.steps > li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 0;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 700; font-size: 0.9rem;
+    display: grid; place-items: center;
+  }
+  ol.steps > li::after {
+    content: "";
+    position: absolute; left: 14px; top: 34px; bottom: 4px;
+    width: 2px; background: var(--border);
+  }
+  ol.steps > li:last-child::after { display: none; }
+  ol.steps strong { display: block; }
+
+  .tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 1px 8px;
+    white-space: nowrap;
+  }
+  .tag.read { background: var(--accent-soft); color: var(--accent); }
+  .tag.write { background: var(--warn-soft); color: var(--warn); }
+  .tag.pass { background: var(--good-soft); color: var(--good); }
+
+  /* Lessons */
+  ul.lessons { padding-left: 0; list-style: none; margin: 0 0 16px; }
+  ul.lessons li {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+
+  /* Interview questions */
+  details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  summary {
+    cursor: pointer;
+    padding: 13px 16px;
+    font-weight: 600;
+    list-style: none;
+    display: flex; gap: 10px; align-items: baseline;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary .qn { color: var(--accent); font-variant-numeric: tabular-nums; min-width: 1.8em; }
+  summary::after { content: "+"; margin-left: auto; color: var(--muted); font-weight: 400; }
+  details[open] summary::after { content: "−"; }
+  details .answer { padding: 0 16px 14px 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+  details .answer p:last-child, details .answer ul:last-child { margin-bottom: 0; }
+  .controls { display: flex; gap: 8px; margin: 0 0 14px; flex-wrap: wrap; }
+  button {
+    font: inherit; font-size: 0.9rem;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+
+  dl.glossary dt { font-weight: 600; margin-top: 10px; }
+  dl.glossary dd { margin: 2px 0 0; color: var(--muted); }
+
+  footer { margin-top: 56px; color: var(--muted); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Phase 1, explained simply</h1>
+<p class="lede">What MCP is, why we connected Claude to Google Calendar through it, what we actually did on 2026-10-07, and what we learned. Interview questions at the end.</p>
+
+<nav class="toc" aria-label="Contents">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#what-is-mcp">What is MCP?</a></li>
+    <li><a href="#roles">Host, client, server</a></li>
+    <li><a href="#primitives">Tools, resources, prompts</a></li>
+    <li><a href="#transport">How they talk</a></li>
+    <li><a href="#why-calendar">Why Google Calendar?</a></li>
+    <li><a href="#what-we-did">What we did, step by step</a></li>
+    <li><a href="#one-request">One request, up close</a></li>
+    <li><a href="#lessons">Key lessons</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+    <li><a href="#interview">10 interview questions</a></li>
+  </ol>
+</nav>
+
+<!-- 1 -->
+<h2 id="what-is-mcp">1. What is MCP?</h2>
+<p><strong>MCP (Model Context Protocol)</strong> is a standard way for an AI app, like Claude Code, to connect to outside tools and data, like your calendar, a database or a file system.</p>
+<p>A simple comparison: <strong>MCP is like a USB-C port for AI.</strong> Before USB-C, every device needed its own special cable. With USB-C, one plug shape works for everything. MCP does the same for AI apps and the services they use.</p>
+
+<div class="compare">
+  <div class="card">
+    <h4>Without MCP</h4>
+    <p>Every AI app writes its own custom code for every service. 3 apps × 4 services = 12 separate integrations to build and maintain.</p>
+  </div>
+  <div class="card">
+    <h4>With MCP</h4>
+    <p>Each service builds <em>one</em> MCP server. Each AI app supports MCP <em>once</em>. Then any app can use any server. 3 + 4 = 7 pieces, not 12.</p>
+  </div>
+</div>
+
+<div class="callout">
+  <p><strong>In one line:</strong> MCP lets Claude <em>discover</em> what a service can do, and then <em>ask</em> it to do those things, using a shared set of rules.</p>
+</div>
+
+<p>Under the hood, the messages are <strong>JSON-RPC 2.0</strong>: small JSON objects that say "call this method with these arguments" and get a JSON reply back. When we opened <code>/mcp</code>, it showed <strong>Protocol: 2026-07-28</strong>, the version of the MCP rules the two sides agreed to use.</p>
+
+<!-- 2 -->
+<h2 id="roles">2. The three roles: host, client, server</h2>
+<p>Every MCP setup has three parts. Here is what they were in Phase 1:</p>
+
+<div class="flow" role="img" aria-label="You talk to Claude Code (host). Its MCP client talks through claude.ai's connector proxy to Google's Calendar MCP server, which reads and writes Google Calendar data.">
+  <div class="box">
+    <strong>You</strong>
+    <span class="desc">Type a request in plain English: "What's on my calendar tomorrow?"</span>
+  </div>
+  <div class="arrow">you type</div>
+  <div class="box">
+    <span class="role">Host</span>
+    <strong>Claude Code</strong>
+    <span class="desc">The app you use. It runs the AI model and decides when to use a tool.</span>
+  </div>
+  <div class="arrow">inside the host</div>
+  <div class="box">
+    <span class="role">Client</span>
+    <strong>MCP client (one per server)</strong>
+    <span class="desc">The part of Claude Code that speaks MCP. It keeps a 1-to-1 connection with one server.</span>
+  </div>
+  <div class="arrow">over the internet (HTTP)</div>
+  <div class="box">
+    <span class="role">Middle layer</span>
+    <strong>claude.ai connector proxy</strong>
+    <span class="desc">Holds your Google sign-in on claude.ai's side and passes messages along. You signed in here through <code>/mcp</code>.</span>
+  </div>
+  <div class="arrow">forwards to</div>
+  <div class="box">
+    <span class="role">Server</span>
+    <strong>Google's Calendar MCP server</strong>
+    <span class="desc"><code>calendarmcp.googleapis.com</code>. Offers 9 tools and does the actual calendar work.</span>
+  </div>
+  <div class="arrow">reads / writes</div>
+  <div class="box">
+    <strong>Your Google Calendar data</strong>
+  </div>
+</div>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Role</th><th>Simple meaning</th><th>In Phase 1</th></tr>
+  <tr><td><strong>Host</strong></td><td>The AI app the user talks to</td><td>Claude Code</td></tr>
+  <tr><td><strong>Client</strong></td><td>The connector inside the host, one per server</td><td>Claude Code's MCP client for "claude.ai Google Calendar"</td></tr>
+  <tr><td><strong>Server</strong></td><td>The program that offers abilities to the AI</td><td>Google's Calendar MCP server</td></tr>
+</table>
+</div>
+
+<div class="callout warn">
+  <p><strong>Important:</strong> Claude Code never talks to the Google Calendar API directly. It only calls MCP tools. The server does the Google part.</p>
+</div>
+
+<!-- 3 -->
+<h2 id="primitives">3. What a server can offer: tools, resources, prompts</h2>
+<p>An MCP server can offer three kinds of things. They're called <strong>primitives</strong>.</p>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Primitive</th><th>Think of it as</th><th>Who decides to use it</th><th>Example</th></tr>
+  <tr><td><strong>Tool</strong></td><td>An <em>action</em> (a function the AI can call)</td><td>The AI model</td><td><code>create_event</code>, <code>list_events</code></td></tr>
+  <tr><td><strong>Resource</strong></td><td>Some <em>data to read</em>, like a file</td><td>The app or the user</td><td><code>planner://preferences</code> (Phase 2)</td></tr>
+  <tr><td><strong>Prompt</strong></td><td>A ready-made <em>instruction template</em></td><td>The user (e.g. a slash command)</td><td><code>plan_my_day</code> (Phase 2)</td></tr>
+</table>
+</div>
+
+<p>The Google Calendar server offers <strong>only tools</strong> (9 of them). Your Phase 2 server, <code>focus-planner</code>, will offer all three, so you learn each one.</p>
+
+<h3>The 9 tools we found</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Tool</th><th>What it does</th><th>Type</th></tr>
+  <tr><td><code>list_calendars</code></td><td>Lists your calendars and their IDs</td><td><span class="tag read">read</span></td></tr>
+  <tr><td><code>list_events</code></td><td>Lists events on one calendar (by time, text…)</td><td><span class="tag read">read</span></td></tr>
+  <tr><td><code>search_events</code></td><td>Smart search, main calendar only</td><td><span class="tag read">read</span></td></tr>
+  <tr><td><code>get_event</code></td><td>Gets one event by its ID</td><td><span class="tag read">read</span></td></tr>
+  <tr><td><code>suggest_time</code></td><td>Finds free time slots</td><td><span class="tag read">read</span></td></tr>
+  <tr><td><code>create_event</code></td><td>Creates an event</td><td><span class="tag write">write</span></td></tr>
+  <tr><td><code>update_event</code></td><td>Changes an event (e.g. moves it)</td><td><span class="tag write">write</span></td></tr>
+  <tr><td><code>delete_event</code></td><td>Deletes an event</td><td><span class="tag write">write</span></td></tr>
+  <tr><td><code>respond_to_event</code></td><td>Accepts or declines an invitation</td><td><span class="tag write">write</span></td></tr>
+</table>
+</div>
+
+<p>Each tool comes with a <strong>JSON Schema</strong>: a description of its inputs, saying which are required and which are optional, plus their types and defaults. Claude reads this to know how to call the tool. For example, <code>create_event</code> <em>requires</em> <code>summary</code>, <code>startTime</code> and <code>endTime</code>, and <code>calendarId</code> is <em>optional</em> (default: your main calendar).</p>
+
+<!-- 4 -->
+<h2 id="transport">4. How they talk: transports</h2>
+<p>A <strong>transport</strong> is the "road" the messages travel on. MCP has two main ones:</p>
+<div class="compare">
+  <div class="card">
+    <h4>stdio (local)</h4>
+    <p>The host starts the server as a program on <em>your</em> computer and talks to it through its input and output. No network and no sign-in needed. <strong>Phase 2 uses this.</strong></p>
+  </div>
+  <div class="card">
+    <h4>Streamable HTTP (remote)</h4>
+    <p>The server runs somewhere else on the internet and messages go over HTTP. Needs a sign-in (OAuth). <strong>Phase 1 used this.</strong></p>
+  </div>
+</div>
+
+<!-- 5 -->
+<h2 id="why-calendar">5. Why Google Calendar, and why this connector?</h2>
+<ul class="lessons">
+  <li><strong>Learn as a user before building.</strong> Using a finished server first shows what "good" looks like before you write your own in Phase 2.</li>
+  <li><strong>Real data, real results.</strong> Your calendar is something you know well, so you can instantly tell if Claude got it right.</li>
+  <li><strong>Covers reading and writing.</strong> Listing, creating, moving and deleting events exercises the most important kinds of tool.</li>
+  <li><strong>Already available, and free.</strong> The connector comes with your claude.ai account. You only had to sign in through <code>/mcp</code>. No Google Cloud setup and no extra cost.</li>
+  <li><strong>Sets up Phase 2.</strong> Your <code>focus-planner</code> server will <em>not</em> talk to Google. Calendar work stays with this server, and yours does the planning. Claude combines the two. That shows how MCP servers work together.</li>
+</ul>
+<div class="callout">
+  <p><strong>Decision D1:</strong> start with the built-in connector (fast, simple). Optionally try a self-hosted calendar server later, to learn how sign-in (OAuth) works in detail.</p>
+</div>
+
+<!-- 6 -->
+<h2 id="what-we-did">6. What we did, step by step</h2>
+<ol class="steps">
+  <li><strong>Wrote the plan</strong>Goal spec (<code>00-goal.md</code>) and Phase 1 spec (<code>01-…md</code>). Decided: built-in connector, Python for Phase 2, a separate "MCP Test" calendar, a public GitHub repo.</li>
+  <li><strong>Signed in</strong>Ran <code>/mcp</code> → picked "claude.ai Google Calendar" → signed in with Google. Before sign-in, the server only offered an <code>authenticate</code> tool. Afterwards, 9 real tools appeared.</li>
+  <li><strong>Listed the tools</strong>Read each tool's schema and wrote them down. Found: no tool can create a <em>calendar</em>, and the calendar defaults to your main one.</li>
+  <li><strong>Made the "MCP Test" calendar</strong>Created by hand in Google Calendar. (The first try made an <em>event</em> called MCP-3 by mistake, and we deleted it. An event lives <em>inside</em> a calendar.)</li>
+  <li><strong>Ran the exercises</strong>Read tomorrow, summarized the week, then created, moved and deleted a test event, then three edge cases. Details below.</li>
+  <li><strong>Cleaned up and saved</strong>Deleted all <code>[MCP]</code> test events, filled in the observation log, committed and pushed to GitHub.</li>
+</ol>
+
+<h3>The exercises and results</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>#</th><th>What you asked</th><th>What happened</th><th></th></tr>
+  <tr><td>E1</td><td>What's on my calendar tomorrow?</td><td>One <code>list_events</code> call for Oct 8 (midnight to midnight, India time). Found 2 items.</td><td><span class="tag pass">pass</span></td></tr>
+  <tr><td>E2</td><td>Summarize my week</td><td>One call for Mon–Sun. 3 busy events + 2 Tasks marked "free". Busiest: Friday.</td><td><span class="tag pass">pass</span></td></tr>
+  <tr><td>—</td><td>Add "Travel to SSB" Friday</td><td>Claude <em>asked</em> for the time and calendar first, then created it on your main calendar.</td><td><span class="tag pass">pass</span></td></tr>
+  <tr><td>E3</td><td>Create a test event</td><td>Created on MCP Test. The first copy vanished (deleted from the web page), so we recreated it and <em>read it back</em>.</td><td><span class="tag pass">pass</span></td></tr>
+  <tr><td>E4</td><td>Move it to 14:00</td><td>Two calls: find it by name, then update it by ID.</td><td><span class="tag pass">pass</span></td></tr>
+  <tr><td>E5</td><td>Delete it</td><td>Status "cancelled". A read-back confirmed it was gone.</td><td><span class="tag pass">pass</span></td></tr>
+  <tr><td>E6.1</td><td>Move "my test event" (2 matches)</td><td>Claude asked which one instead of guessing.</td><td><span class="tag pass">pass</span></td></tr>
+  <tr><td>E6.2</td><td>Create an overlapping event</td><td>Created with <strong>no warning</strong> from the server.</td><td><span class="tag pass">observed</span></td></tr>
+  <tr><td>E6.3</td><td>Create with no calendar named</td><td>Claude chose MCP Test from conversation memory. The tool alone would have used your main calendar.</td><td><span class="tag pass">observed</span></td></tr>
+</table>
+</div>
+
+<!-- 7 -->
+<h2 id="one-request">7. One request, up close</h2>
+<p>Here's exactly what happened when you asked <em>"What's on my calendar tomorrow?"</em></p>
+<ol class="steps">
+  <li><strong>Claude decides which tool to use</strong>From the tool list, <code>list_events</code> fits best. "Tomorrow" becomes a time range: today is Oct 7 and your time zone is India (+05:30).</li>
+  <li><strong>The client sends the call</strong>
+<pre><code>list_events {
+  "startTime": "2026-10-08T00:00:00+05:30",
+  "endTime":   "2026-10-09T00:00:00+05:30",
+  "orderBy":   "startTime"
+}</code></pre>
+  No <code>calendarId</code>, so the server used your main calendar.</li>
+  <li><strong>The server replies with JSON</strong>About 15 fields per event: ID, start, end, title, creator, reminders, link, "transparency" and more. (Shortened here.)
+<pre><code>{ "summary": "MCP test-1",
+  "start": { "dateTime": "2026-10-08T14:00:00+05:30" },
+  "end":   { "dateTime": "2026-10-08T15:00:00+05:30" },
+  "eventType": "DEFAULT", ... }</code></pre></li>
+  <li><strong>Claude writes a short answer</strong>It picks the few fields you care about (time and title) and shows them in a table. The rest is dropped.</li>
+</ol>
+<div class="callout">
+  <p><strong>Notice:</strong> the server returns lots of raw data and the model turns it into a short answer. That raw data still counts toward your Claude usage, so asking for a narrow time range is cheaper.</p>
+</div>
+
+<!-- 8 -->
+<h2 id="lessons">8. Key lessons from Phase 1</h2>
+<ul class="lessons">
+  <li><strong>1. The schema shapes behavior.</strong> Because <code>calendarId</code> is optional and defaults to your main calendar, a forgotten argument writes to the wrong place, silently.</li>
+  <li><strong>2. The server does no thinking.</strong> It didn't warn about overlapping events and didn't care that two events had the same name. Spotting clashes and asking "which one?" is the model's job.</li>
+  <li><strong>3. Names vs IDs.</strong> You speak in names ("MCP Test", "my test event"). Tools need IDs. So many tasks take two steps: <em>find the ID</em>, then <em>act on it</em>.</li>
+  <li><strong>4. Rules in chat don't last.</strong> Claude followed "test events go to MCP Test" only because it was in <em>this</em> conversation. To make a rule permanent, put it in a file, a resource or a prompt. That's a Phase 2 job.</li>
+  <li><strong>5. Read it back.</strong> A "success" reply only means it worked at that moment. The first test event was deleted 41 seconds later. Always check with a read.</li>
+  <li><strong>6. Missing details → ask before writing.</strong> For reads, a reasonable guess is fine. For writes (create, move, delete), Claude asked when the time, calendar or event was unclear.</li>
+  <li><strong>7. Not everything on a calendar is busy time.</strong> Google Tasks showed up as "focus time" events marked <em>free</em>. Your Phase 2 tool must ignore free events when finding open time.</li>
+  <li><strong>8. Hosted sign-in hides the details.</strong> You clicked "allow" in a browser, but the token is stored on claude.ai's side, not on your machine. To really learn OAuth, you'd self-host a server (optional Phase 1b).</li>
+</ul>
+
+<!-- 9 -->
+<h2 id="glossary">9. Glossary</h2>
+<dl class="glossary">
+  <dt>MCP</dt><dd>Model Context Protocol: a standard for connecting AI apps to tools and data.</dd>
+  <dt>Host</dt><dd>The AI app you use (Claude Code).</dd>
+  <dt>Client</dt><dd>The part of the host that connects to one MCP server.</dd>
+  <dt>Server</dt><dd>A program that offers tools, resources and/or prompts.</dd>
+  <dt>Tool</dt><dd>An action the AI can call, like <code>create_event</code>.</dd>
+  <dt>Resource</dt><dd>Read-only data the server shares, like a settings file.</dd>
+  <dt>Prompt</dt><dd>A reusable instruction template, often shown as a slash command.</dd>
+  <dt>JSON Schema</dt><dd>A description of a tool's inputs: names, types, required or optional, defaults.</dd>
+  <dt>Transport</dt><dd>How messages travel: stdio (local) or Streamable HTTP (remote).</dd>
+  <dt>JSON-RPC</dt><dd>The simple request/response message format MCP uses.</dd>
+  <dt>OAuth</dt><dd>A safe sign-in method: you approve access in a browser, and the app gets a token instead of your password.</dd>
+  <dt>Connector</dt><dd>claude.ai's name for an MCP server you add to your account.</dd>
+  <dt>calendarId</dt><dd>The unique ID of a calendar. The special value <code>primary</code> means your main calendar.</dd>
+</dl>
+
+<!-- 10 -->
+<h2 id="interview">10. Ten interview questions</h2>
+<p>Try to answer each one out loud first, then open it to check.</p>
+<div class="controls">
+  <button type="button" id="open-all">Show all answers</button>
+  <button type="button" id="close-all">Hide all answers</button>
+</div>
+
+<details>
+  <summary><span class="qn">Q1</span>What is MCP, and what problem does it solve?</summary>
+  <div class="answer">
+    <p>MCP (Model Context Protocol) is an open standard for connecting AI applications to external tools and data. It replaces one-off custom integrations, where every app × every service needs its own code, with one shared protocol. A service builds one MCP server, an app supports MCP once, and they work together.</p>
+  </div>
+</details>
+
+<details>
+  <summary><span class="qn">Q2</span>Explain host, client and server in MCP.</summary>
+  <div class="answer">
+    <p>The <strong>host</strong> is the AI application the user interacts with (e.g. Claude Code). Inside it, an <strong>MCP client</strong> keeps a one-to-one connection with one <strong>MCP server</strong>. The server offers capabilities. A host can have many clients, one per server. In my project: Claude Code is the host, and Google's Calendar MCP server is a server.</p>
+  </div>
+</details>
+
+<details>
+  <summary><span class="qn">Q3</span>What are tools, resources and prompts? When would you use each?</summary>
+  <div class="answer">
+    <ul>
+      <li><strong>Tools:</strong> actions the <em>model</em> decides to call (create an event, run a query). They can have side effects.</li>
+      <li><strong>Resources:</strong> read-only data the <em>application or user</em> chooses to load as context (a config file, a document).</li>
+      <li><strong>Prompts:</strong> reusable templates the <em>user</em> picks, often as slash commands, to start a workflow.</li>
+    </ul>
+    <p>Rule of thumb: does something → tool; is something to read → resource; is a way of asking → prompt.</p>
+  </div>
+</details>
+
+<details>
+  <summary><span class="qn">Q4</span>What's the difference between the stdio and Streamable HTTP transports?</summary>
+  <div class="answer">
+    <p><strong>stdio:</strong> the host starts the server as a local process and exchanges messages through standard input and output. It's simple, fast, has no network and usually no auth, and suits local tools. <strong>Streamable HTTP:</strong> the server runs remotely and is reached over HTTP, which suits shared or hosted services. It needs proper authentication, usually OAuth. My Phase 1 calendar server was remote HTTP. My Phase 2 server will use stdio.</p>
+  </div>
+</details>
+
+<details>
+  <summary><span class="qn">Q5</span>How does the model know which tools exist and how to call them?</summary>
+  <div class="answer">
+    <p>After connecting, the client asks the server for its tool list (<code>tools/list</code>). Each tool has a name, a description and an <strong>input JSON Schema</strong>. The host gives these to the model, which picks a tool and builds arguments that match the schema. The client then sends a <code>tools/call</code> request. Good descriptions and schemas directly improve how well the model uses the tool.</p>
+  </div>
+</details>
+
+<details>
+  <summary><span class="qn">Q6</span>How does authentication work for a remote MCP server compared with a local one?</summary>
+  <div class="answer">
+    <p>Remote servers typically use <strong>OAuth</strong>: the user approves access in a browser, and the client gets a token to send with requests, never the user's password. In my case, claude.ai's connector proxy did the OAuth flow and held the token. Local stdio servers usually need no user sign-in. Any secrets (API keys) are passed through environment variables and kept out of git.</p>
+  </div>
+</details>
+
+<details>
+  <summary><span class="qn">Q7</span>A tool's <code>calendarId</code> is optional and defaults to the primary calendar. What's the risk, and how would you reduce it?</summary>
+  <div class="answer">
+    <p>Risk: if the model forgets the argument, writes silently go to the user's real calendar. I saw that the only thing preventing it was conversation memory. Ways to reduce it: put the rule somewhere durable (a project instructions file, an MCP prompt or resource), have the model confirm the target before writes, verify with a read-back, or (if you own the server) make the field required or reject writes without it.</p>
+  </div>
+</details>
+
+<details>
+  <summary><span class="qn">Q8</span>The user says "move my test event" and two events match. Whose job is it to handle that, and how?</summary>
+  <div class="answer">
+    <p>The model's (client side). The server just returns all matches. Titles aren't unique, only IDs are. The correct behavior is to search, notice more than one match, and <strong>ask the user</strong> which one, before calling any write tool. Guessing on a write is risky. That's what happened in my exercise E6.1.</p>
+  </div>
+</details>
+
+<details>
+  <summary><span class="qn">Q9</span>Why didn't the calendar server warn about overlapping events? Where should conflict checks live?</summary>
+  <div class="answer">
+    <p>Google Calendar allows overlaps, and the server simply did what it was asked. MCP servers usually expose plain operations, not judgment. Conflict checks belong in the reasoning layer: the model calls a read tool first (<code>list_events</code> or <code>suggest_time</code>), or a dedicated tool computes free time. That's exactly the job of my Phase 2 tool, <code>find_focus_blocks</code>.</p>
+  </div>
+</details>
+
+<details>
+  <summary><span class="qn">Q10</span>How would you debug an MCP integration?</summary>
+  <div class="answer">
+    <ul>
+      <li>Check connection status, protocol version and capabilities (in Claude Code: <code>/mcp</code>).</li>
+      <li>Look at each tool call's actual arguments and raw result in the transcript.</li>
+      <li>Test the server on its own with the <strong>MCP Inspector</strong>: list and call tools, resources and prompts directly, without the model.</li>
+      <li>For stdio servers, log to <em>stderr</em>, never stdout, because stdout carries the protocol messages.</li>
+      <li>Verify writes with a read-back rather than trusting the success reply.</li>
+    </ul>
+  </div>
+</details>
+
+<footer>
+  <p>Day Planner over MCP · Phase 1 complete (2026-10-07) · Next: Phase 2, building the <code>focus-planner</code> server in Python.</p>
+</footer>
+
+</main>
+<script>
+  (function () {
+    var all = function () { return document.querySelectorAll('details'); };
+    document.getElementById('open-all').addEventListener('click', function () {
+      all().forEach(function (d) { d.open = true; });
+    });
+    document.getElementById('close-all').addEventListener('click', function () {
+      all().forEach(function (d) { d.open = false; });
+    });
+  })();
+</script>
+</body>
+</html>
