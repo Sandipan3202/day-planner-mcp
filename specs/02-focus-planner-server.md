@@ -52,16 +52,17 @@ Decision in force: **D2**. Python, using the official MCP Python SDK (FastMCP AP
 | Item | Choice | Notes |
 |---|---|---|
 | Language | Python ≥ 3.10 (machine has 3.14) | |
-| MCP SDK | `mcp` package from PyPI (official), FastMCP API | `pip install "mcp[cli]"` adds the `mcp dev` command (launches the Inspector) |
+| MCP SDK | `mcp` package from PyPI (official), 2.x `MCPServer` API | `pip install "mcp[cli]"` adds the `mcp dev` command (launches the Inspector) |
 | Env / packaging | `uv` (D6) | Free; manages the Python version, the venv and dependencies. One-time install needed |
 | Tests | `pytest` | Unit tests for the planning logic only |
 | Inspector | `npx @modelcontextprotocol/inspector` | Node 24 is installed |
 
 **Cost:** everything here is free and runs locally. Nothing in this phase needs a paid service or a billing account.
 
-**Check before coding:** the SDK changes quickly. Before writing code, check the current
-`mcp` Python SDK README for the exact import path (`from mcp.server.fastmcp import FastMCP` as of
-writing) and the decorator names, and update this spec if they differ.
+**SDK version (checked 2026-10-07):** `mcp` **2.3.0**. In 2.x, `FastMCP` was renamed to **`MCPServer`**:
+`from mcp.server.mcpserver import MCPServer`. The decorators are unchanged (`@server.tool()`,
+`@server.resource(uri)`, `@server.prompt()`, `server.run("stdio")`). Older tutorials that use
+`from mcp.server.fastmcp import FastMCP` fail on 2.x with a `ModuleNotFoundError` pointing to the migration guide.
 
 ### Project layout
 
@@ -76,6 +77,7 @@ src/focus_planner/
   planner.py                # pure logic: find_focus_blocks()
   preferences.py            # load + validate preferences.json
 tests/
+  test_preferences.py
   test_planner.py
 .mcp.json                   # project-scoped registration for Claude Code
 ```

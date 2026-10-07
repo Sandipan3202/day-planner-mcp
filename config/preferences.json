@@ -1,0 +1,16 @@
+{
+  "timezone": "Asia/Kolkata",
+  "working_days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+  "working_hours": { "start": "09:30", "end": "18:30" },
+  "lunch": { "start": "12:30", "end": "13:30" },
+  "focus_block_minutes": 120,
+  "min_focus_minutes": 60,
+  "buffer_minutes": 10,
+  "max_focus_blocks_per_day": 2,
+  "no_meeting_days": [],
+  "calendars": {
+    "read": "primary",
+    "write": "beb30fefd017ae45273926ebd94225b07caa9f06e682c801991ef0be02384faa@group.calendar.google.com"
+  },
+  "focus_event_title": "[MCP] Focus block"
+}

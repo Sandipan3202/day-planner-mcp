@@ -1,0 +1,23 @@
+[project]
+name = "focus-planner"
+version = "0.1.0"
+description = "Local MCP server that finds focus time in a day, given calendar events and my preferences"
+authors = [
+    { name = "Sandipan", email = "45350077+Sandipan3202@users.noreply.github.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=2.3.0",
+]
+
+[project.scripts]
+focus-planner = "focus_planner:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
