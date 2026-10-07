@@ -1,6 +1,6 @@
 # 02 — Phase 2 Spec: the `focus-planner` MCP server
 
-Status: **Draft — awaiting review**
+Status: **Approved — open questions resolved (2026-10-07)**
 Date: 2026-10-07
 Owner: Sandipan
 Parent: [00-goal.md](00-goal.md) · Builds on: [01-phase1-calendar-connect.md](01-phase1-calendar-connect.md)
@@ -53,7 +53,7 @@ Decision in force: **D2**. Python, using the official MCP Python SDK (FastMCP AP
 |---|---|---|
 | Language | Python ≥ 3.10 (machine has 3.14) | |
 | MCP SDK | `mcp` package from PyPI (official), FastMCP API | `pip install "mcp[cli]"` adds the `mcp dev` command (launches the Inspector) |
-| Env / packaging | `uv` (not installed yet), or `python -m venv` + `pip` | `uv` is free and makes `claude mcp add` commands simpler. Decide in §11. |
+| Env / packaging | `uv` (D6) | Free; manages the Python version, the venv and dependencies. One-time install needed |
 | Tests | `pytest` | Unit tests for the planning logic only |
 | Inspector | `npx @modelcontextprotocol/inspector` | Node 24 is installed |
 
@@ -90,22 +90,22 @@ that Phase 1 showed don't survive between sessions.
 - Source: `config/preferences.json`, re-read on every request, so edits apply without a restart.
 - If the file is missing or invalid: return an MCP error naming the file and the bad field, never made-up defaults.
 
-### Shape (initial values are placeholders; see §11 Q1)
+### Shape (my real values, decided in §11 D5)
 
 ```json
 {
   "timezone": "Asia/Kolkata",
   "working_days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
   "working_hours": { "start": "09:30", "end": "18:30" },
-  "lunch": { "start": "13:00", "end": "14:00" },
-  "focus_block_minutes": 90,
-  "min_focus_minutes": 45,
+  "lunch": { "start": "12:30", "end": "13:30" },
+  "focus_block_minutes": 120,
+  "min_focus_minutes": 60,
   "buffer_minutes": 10,
   "max_focus_blocks_per_day": 2,
-  "no_meeting_days": ["Wed"],
+  "no_meeting_days": [],
   "calendars": {
     "read": "primary",
-    "write": "<MCP Test calendar ID>"
+    "write": "beb30fefd017ae45273926ebd94225b07caa9f06e682c801991ef0be02384faa@group.calendar.google.com"
   },
   "focus_event_title": "[MCP] Focus block"
 }
@@ -162,11 +162,11 @@ Structured JSON (also returned as text for clients that only show text):
   "working_day": true,
   "no_meeting_day": false,
   "blocks": [
-    { "start": "2026-10-08T09:30:00+05:30", "end": "2026-10-08T11:00:00+05:30", "minutes": 90 },
-    { "start": "2026-10-08T15:10:00+05:30", "end": "2026-10-08T16:40:00+05:30", "minutes": 90 }
+    { "start": "2026-10-08T09:30:00+05:30", "end": "2026-10-08T11:30:00+05:30", "minutes": 120 },
+    { "start": "2026-10-08T14:40:00+05:30", "end": "2026-10-08T16:40:00+05:30", "minutes": 120 }
   ],
   "skipped": [
-    { "start": "2026-10-08T11:40:00+05:30", "end": "2026-10-08T12:10:00+05:30", "reason": "shorter than 45 min" }
+    { "start": "2026-10-08T11:40:00+05:30", "end": "2026-10-08T12:10:00+05:30", "reason": "shorter than 60 min" }
   ],
   "notes": ["1 event ignored: marked free (\"MCP-2\")"]
 }
@@ -244,11 +244,14 @@ from start to finish is spec 03.
 ## 9. Registration in Claude Code (G6)
 
 Use **project scope** so the config lives in the repo as `.mcp.json` and anyone cloning it gets the same setup.
-The exact command depends on §11 Q2; the shape is:
+With `uv` (D6), the command is roughly:
 
 ```bash
-claude mcp add --scope project focus-planner -- <python-or-uv command> -m focus_planner
+claude mcp add --scope project focus-planner -- uv run --directory <repo path> python -m focus_planner
 ```
+
+The absolute repo path would make `.mcp.json` machine-specific. If Claude Code is always started from the repo
+root, try dropping `--directory`. Check what gets written to `.mcp.json` and keep it portable.
 
 Check: `/mcp` lists `focus-planner` as connected, with **Capabilities: tools, resources, prompts**. Compare this with
 the Calendar server, which showed tools only.
@@ -266,12 +269,16 @@ the Calendar server, which showed tools only.
 - [ ] B8. Claude Code: asking Claude to "find focus blocks for this list of events" calls the tool correctly (no Calendar server needed).
 - [ ] B9. Nothing is written to stdout except protocol messages (check: log lines appear only in stderr / the Inspector's log panel).
 
-## 11. Open questions (decide before coding)
+## 11. Decisions (resolved 2026-10-07)
 
-- **Q1. My real preferences:** working hours, lunch, focus length, minimum block, buffer, blocks per day, no-meeting days.
-- **Q2. Environment tool:** install `uv` (free) or use the built-in `venv` + `pip`?
-- **Q3. Write calendar ID in `preferences.json`:** commit the MCP Test ID (it reveals nothing personal and it's already
-  in spec 01), or keep the file git-ignored with a committed `preferences.example.json`?
+Numbered after 00-goal's D1–D4.
+
+- **D5 (was Q1). Preferences:** working days Mon–Fri; working hours 09:30–18:30; lunch 12:30–13:30;
+  focus blocks of 120 min, minimum 60 min; 10 min buffer around busy events; at most 2 blocks a day;
+  no no-meeting days. The values are in §5.
+- **D6 (was Q2). Environment:** `uv`. It's free, but not installed yet, so installing it is the first coding step.
+- **D7 (was Q3). Calendar ID:** commit `config/preferences.json` with the real MCP Test ID. It reveals nothing personal
+  and is already in spec 01. The read calendar stays `primary`, so my Gmail address never appears.
 
 ## 12. Out of scope (for this phase)
 
