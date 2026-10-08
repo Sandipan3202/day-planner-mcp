@@ -43,10 +43,11 @@ def test_tomorrow_has_the_steps_and_preferences(prefs):
     assert '"buffer_minutes": 10' in text
     # Full-day read window in the preferences offset.
     assert "startTime 2026-10-09T00:00:00+05:30, endTime 2026-10-10T00:00:00+05:30" in text
-    # Busy rules, confirm-before-write, FOCUS_TIME, read-back.
+    # Busy rules, confirm-before-write, busy normal event (FOCUS_TIME is rejected on MCP Test), read-back.
     for phrase in ("transparent", "AVAILABILITY_FREE", "declined", "Do NOT create anything yet",
-                   "eventType FOCUS_TIME", "notificationLevel NONE", "Read the events back"):
+                   "availability AVAILABILITY_BUSY", "notificationLevel NONE", "Read the events back"):
         assert phrase in text
+    assert "eventType FOCUS_TIME" not in text
     assert f'summary "{prefs["focus_event_title"]}"' in text
 
 

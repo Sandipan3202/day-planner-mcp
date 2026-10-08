@@ -91,7 +91,8 @@ Follow these steps in order:
 6. Only after I say yes, call `create_event` once per block with:
    calendarId "{write_cal}" (always pass it; never write to "{read_cal}"),
    summary "{title}", the block's startTime and endTime, timeZone "{preferences["timezone"]}",
-   eventType FOCUS_TIME, notificationLevel NONE.
+   availability AVAILABILITY_BUSY, notificationLevel NONE. Leave eventType unset (a normal event):
+   Google rejects FOCUS_TIME on this calendar.
 
 7. Read the events back with `list_events` on calendarId "{write_cal}" for {day.isoformat()},
    and report what actually exists there, not what the create calls said.

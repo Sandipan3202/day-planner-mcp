@@ -35,7 +35,7 @@ Decisions in force: **D3** (read main, write only to "MCP Test"), **D5** (prefer
    ├─ convert events (busy rules)            ← done by the model, no server involved
    ├─ find_focus_blocks(date, events) ─────► focus-planner   (model-triggered: TOOL)
    ├─ show plan, ask me ◄──── I say yes / no
-   ├─ create_event × N (MCP Test, FOCUS_TIME) ► Google Calendar
+   ├─ create_event × N (MCP Test, busy) ──► Google Calendar
    └─ list_events (MCP Test) ──────────────► Google Calendar  (read back, E3 lesson)
 ```
 
@@ -103,7 +103,7 @@ proposes `primary` (or no `calendarId`) for a write, answer **no** and log it.
 
 | Run | Input | Tool calls + key args (both servers) | Result | Surprises / notes |
 |---|---|---|---|---|
-| P3 | | | | |
+| P3 (2026-10-08) | Probe on MCP Test, Sat Oct 10 10:00–10:30 | 1) `create_event`, `calendarId <MCP Test>`, `eventType FOCUS_TIME`, `notificationLevel NONE` → **error "Request contains an invalid argument."** 2) Control: same call without `eventType` → created (`eventType DEFAULT`, organizer MCP Test). 3) `delete_event` → `cancelled`; `list_events` `fullText "[MCP]"` on MCP Test for October → none | **FOCUS_TIME is rejected on MCP Test**, and only the event type differs between the two calls. Spec 02 step 6 can't work as written. | Fits Google's rule that focus time goes only on a primary calendar, but the error message doesn't say why. Not tried on primary (D3). Side findings: MCP Test has no leftover `[MCP]` events (P2 clean for that calendar). The connector's schema now says to pass `startTime`/`endTime` as **local time with no offset** (it fills in the zone), which differs from what Phase 1 recorded. |
 | R1 | | | | |
 | R2 | | | | |
 | R3 | | | | |
@@ -146,7 +146,8 @@ proposes `primary` (or no `calendarId`) for a write, answer **no** and log it.
 - **Q1. If P3 shows FOCUS_TIME doesn't work on MCP Test**, which fallback?
   (a) Create normal events on MCP Test titled `[MCP] Focus block`, with `availability` busy. Keeps D3.
   (b) Create real FOCUS_TIME events on primary. Breaks D3, so it needs a new decision.
-  *Recommendation: (a).* It's a one-line change to step 6 of `plan_my_day` (spec 02 §7) plus a test update.
+  **Resolved 2026-10-08: (a).** P3 showed FOCUS_TIME is rejected. Step 6 of `plan_my_day` now creates
+  normal events with `availability AVAILABILITY_BUSY` and no `eventType` (spec 02 §7 updated).
 - **Q2. Duplicates on re-run (R5).** Options:
   (a) Change `plan_my_day` to also `list_events` on `calendars.write` and pass those events as busy, so
       existing blocks count as taken. Small prompt change, no server change.

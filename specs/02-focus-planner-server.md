@@ -25,7 +25,7 @@ Decision in force: **D2**. Python, using the official MCP Python SDK (FastMCP AP
 | Phase 1 finding | What this server does about it |
 |---|---|
 | The Calendar server does no reasoning: no conflict warnings, no free-time logic. | `find_focus_blocks` computes free time from events + my preferences. |
-| `suggest_time` already finds free slots. | We go beyond it: working hours, lunch, buffers, focus length, max blocks per day, no-meeting days. The output is ready for `create_event` with `FOCUS_TIME`. |
+| `suggest_time` already finds free slots. | We go beyond it: working hours, lunch, buffers, focus length, max blocks per day, no-meeting days. The output is ready for `create_event` (as busy events; FOCUS_TIME is rejected on MCP Test, see spec 03 P3). |
 | Rules held only while they were in the chat (E6.3). | The calendars to read and write live in `planner://preferences`, and `plan_my_day` puts them into every planning run. |
 | Google Tasks arrive as `FOCUS_TIME` events with `transparency: transparent`. | Events marked not busy are ignored when finding free time. |
 | A success reply isn't proof (E3). | `plan_my_day` tells Claude to read events back after creating them. |
@@ -227,7 +227,8 @@ the values in, so the rules are always in context, which fixes E6.3) and these s
 4. Call `find_focus_blocks`.
 5. Show the proposed blocks (and any notes, e.g. a no-meeting day). **Ask for confirmation. Don't write yet.**
 6. On a yes, call `create_event` for each block on **`calendars.write` only** (always pass `calendarId`),
-   with `summary` = `focus_event_title`, `eventType: FOCUS_TIME`, and `notificationLevel: NONE`.
+   with `summary` = `focus_event_title`, `availability: AVAILABILITY_BUSY`, and `notificationLevel: NONE`.
+   `eventType` stays unset: Google rejects `FOCUS_TIME` on a secondary calendar (spec 03 P3, Q1).
 7. Read the events back with `list_events` on `calendars.write` and report what actually exists.
 
 Phase 2 tests only that the prompt **renders correctly** (Inspector and slash command). Running the whole flow
