@@ -1,6 +1,6 @@
 # 02 — Phase 2 Spec: the `focus-planner` MCP server
 
-Status: **Approved — open questions resolved (2026-10-07)**
+Status: **Complete — all acceptance checks B1–B9 passed (2026-10-08)**
 Date: 2026-10-07
 Owner: Sandipan
 Parent: [00-goal.md](00-goal.md) · Builds on: [01-phase1-calendar-connect.md](01-phase1-calendar-connect.md)
@@ -260,16 +260,16 @@ the Calendar server, which showed tools only.
 
 ## 10. Acceptance criteria (S2)
 
-- [ ] B1. `pytest` passes, with at least one test per edge case in §6.
-- [ ] B2. Inspector: the server connects; `tools/list` shows `find_focus_blocks` with the input schema in §6.
-- [ ] B3. Inspector: calling `find_focus_blocks` with Phase 1's real Friday Oct 9 events (07:00–08:00, 09:00–10:00,
+- [x] B1. `pytest` passes, with at least one test per edge case in §6.
+- [x] B2. Inspector: the server connects; `tools/list` shows `find_focus_blocks` with the input schema in §6.
+- [x] B3. Inspector: calling `find_focus_blocks` with Phase 1's real Friday Oct 9 events (07:00–08:00, 09:00–10:00,
       a free Task 14:00–17:00, 18:00–19:00) returns blocks that avoid busy time plus buffers and lunch, and lists the Task in `notes`.
-- [ ] B4. Inspector: a bad input (e.g. `end` before `start`) returns a tool error, and the server keeps running.
-- [ ] B5. Inspector: `resources/list` shows `planner://preferences`, and reading it returns the file's JSON.
-- [ ] B6. Inspector: `prompts/list` shows `plan_my_day`; getting it with `date=tomorrow` returns the steps with the preferences filled in.
-- [ ] B7. Claude Code: `/mcp` shows `focus-planner` connected with all three capabilities; `.mcp.json` is committed.
-- [ ] B8. Claude Code: asking Claude to "find focus blocks for this list of events" calls the tool correctly (no Calendar server needed).
-- [ ] B9. Nothing is written to stdout except protocol messages (check: log lines appear only in stderr / the Inspector's log panel).
+- [x] B4. Inspector: a bad input (e.g. `end` before `start`) returns a tool error, and the server keeps running.
+- [x] B5. Inspector: `resources/list` shows `planner://preferences`, and reading it returns the file's JSON.
+- [x] B6. Inspector: `prompts/list` shows `plan_my_day`; getting it with `date=tomorrow` returns the steps with the preferences filled in.
+- [x] B7. Claude Code: `/mcp` shows `focus-planner` connected with all three capabilities; `.mcp.json` is committed.
+- [x] B8. Claude Code: asking Claude to "find focus blocks for this list of events" calls the tool correctly (no Calendar server needed).
+- [x] B9. Nothing is written to stdout except protocol messages (check: log lines appear only in stderr / the Inspector's log panel).
 
 ## 11. Decisions (resolved 2026-10-07)
 
