@@ -56,3 +56,14 @@ def test_weekend_and_no_meeting_day_heads_up(prefs):
     assert "Sat, which is not one of my working days" in text
     assert "no-meeting day" in text
     assert "Heads-up" not in render_plan_my_day("2026-10-09", prefs, now=NOW)
+
+
+def test_reads_write_calendar_so_reruns_dont_duplicate(prefs):
+    # Spec 03 R5 / Q2 (a): existing blocks on calendars.write must count as busy.
+    text = render_plan_my_day("2026-10-09", prefs, now=NOW)
+    write_cal = prefs["calendars"]["write"]
+    assert f'a. calendarId "{prefs["calendars"]["read"]}"' in text
+    assert f'b. calendarId "{write_cal}"' in text
+    assert f'for events from "{write_cal}": always true' in text
+    assert "already planned" in text
+    assert "nothing to create" in text

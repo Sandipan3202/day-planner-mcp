@@ -72,21 +72,26 @@ Follow these steps in order:
 
 1. The date is {day.isoformat()} in {preferences["timezone"]}. Use exactly that day.
 
-2. Fetch that day's events with the Calendar server's `list_events`:
-   calendarId "{read_cal}", startTime {day.isoformat()}T00:00:00{offset}, endTime {next_day.isoformat()}T00:00:00{offset},
-   orderBy startTime. One call covering the full day; don't page past what's needed.
+2. Fetch that day's events with the Calendar server's `list_events`, two calls, each covering the full day
+   (startTime {day.isoformat()}T00:00:00{offset}, endTime {next_day.isoformat()}T00:00:00{offset}, orderBy startTime;
+   don't page past what's needed):
+   a. calendarId "{read_cal}": my real events.
+   b. calendarId "{write_cal}": focus blocks planned earlier, so a re-run doesn't duplicate them.
 
-3. Convert every event (including free ones) to the `find_focus_blocks` input:
+3. Convert every event from both calls (including free ones) to the `find_focus_blocks` input:
    - start: start.dateTime, or start.date for an all-day event
    - end:   end.dateTime, or end.date for an all-day event
-   - busy:  false if transparency is "transparent" (Google Tasks arrive like this),
+   - busy:  for events from "{write_cal}": always true.
+            For events from "{read_cal}": false if transparency is "transparent" (Google Tasks arrive like this),
             or availability is "AVAILABILITY_FREE", or I declined it; otherwise true
    - title: summary
 
 4. Call focus-planner's `find_focus_blocks` with date "{day.isoformat()}" and those events.
 
 5. Show me the proposed blocks (start, end, length) and any notes or skipped gaps worth mentioning.
-   Then ask me to confirm. Do NOT create anything yet.
+   If "{write_cal}" already had "{title}" events that day, list them as already planned.
+   If there are no new blocks, say so and stop: nothing to create.
+   Otherwise ask me to confirm. Do NOT create anything yet.
 
 6. Only after I say yes, call `create_event` once per block with:
    calendarId "{write_cal}" (always pass it; never write to "{read_cal}"),

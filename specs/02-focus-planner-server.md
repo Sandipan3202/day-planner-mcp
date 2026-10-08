@@ -222,10 +222,13 @@ The server must not crash. Cases:
 the values in, so the rules are always in context, which fixes E6.3) and these steps:
 
 1. Work out the date in the preferences time zone.
-2. Call the Calendar server's `list_events` on `calendars.read` for that full day (not paged past what's needed).
-3. Convert the events to the `find_focus_blocks` input. Apply the `busy` rules exactly.
+2. Call the Calendar server's `list_events` for that full day (not paged past what's needed) on `calendars.read`,
+   and again on `calendars.write`, so blocks planned earlier aren't proposed twice (spec 03 R5, Q2).
+3. Convert the events to the `find_focus_blocks` input. Apply the `busy` rules exactly to `calendars.read`
+   events; events from `calendars.write` are always busy.
 4. Call `find_focus_blocks`.
-5. Show the proposed blocks (and any notes, e.g. a no-meeting day). **Ask for confirmation. Don't write yet.**
+5. Show the proposed blocks (and any notes, e.g. a no-meeting day, or blocks already planned). If there are no
+   new blocks, say so and stop. **Otherwise ask for confirmation. Don't write yet.**
 6. On a yes, call `create_event` for each block on **`calendars.write` only** (always pass `calendarId`),
    with `summary` = `focus_event_title`, `availability: AVAILABILITY_BUSY`, and `notificationLevel: NONE`.
    `eventType` stays unset: Google rejects `FOCUS_TIME` on a secondary calendar (spec 03 P3, Q1).

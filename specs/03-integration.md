@@ -109,7 +109,7 @@ proposes `primary` (or no `calendarId`) for a write, answer **no** and log it.
 | R3 | | | | |
 | R4a (2026-10-08) | `/mcp__focus-planner__plan_my_day 2026-10-10` (Sat) | Prompt added a heads-up that Sat isn't a working day. 1) `list_events` primary, Oct 10 full day → 0 events. 2) `find_focus_blocks` with `events []` → `working_day false`, no blocks, note "not a working day". 3) No confirmation asked, no `create_event`. Check: `list_events` MCP Test for Oct 10 → none; calendar `updated` still 16:01:51Z. | **Pass.** No blocks, no writes. | The prompt flags the non-working day on its own, before any tool call. Claude still ran steps 2 to 4 as written instead of stopping early. That's harmless, but it costs one call to each server. |
 | R4b (2026-10-08) | `/mcp__focus-planner__plan_my_day 2026-10-08` (Thu, run at 21:35) | 1) `list_events` primary, Oct 8 full day → 0 events. 2) `find_focus_blocks` with `events []` (no `now` passed) → `working_day true`, no blocks, note "It is already 21:35, after working hours end (18:30)". 3) No confirmation asked, no `create_event`. Check: `list_events` MCP Test for Oct 8 → none; calendar `updated` still 16:01:51Z. | **Pass.** No blocks, no writes. | The server used its own clock for `now`, and its 21:35 matched the real local time, so the time-zone handling is right. Unlike the Saturday case, the prompt gave no heads-up here; only the tool knew it was too late. |
-| R5 | | | | |
+| R5 (2026-10-08) | `/mcp__focus-planner__plan_my_day 2026-10-09` again, after R1's blocks existed; answered **no** | 1) `list_events` primary, Oct 9 → the same 4 events as R1 (MCP Test not read). 2) `find_focus_blocks` with the same 4 events → the same blocks, 10:10–12:10 and 13:40–15:40. 3) Plan shown with a duplicate warning, I said no. 4) No `create_event`. Check: `list_events` MCP Test for Oct 9 → still only R1's 2 events (same IDs), calendar `updated` still 16:01:51Z. | **Problem confirmed (Q2).** The flow proposes exact duplicates of blocks that already exist. Only the confirmation step stopped the write. | Claude warned about the duplicates only because R1 was earlier in the same session, not because of anything in the flow. A fresh session would propose them with no warning. Supports Q2 (a): also read `calendars.write` and pass those events as busy. |
 
 ## 7. Acceptance criteria (S3)
 
@@ -155,6 +155,9 @@ proposes `primary` (or no `calendarId`) for a write, answer **no** and log it.
   (b) Add `already_planned` handling to `find_focus_blocks`. Server change; overkill for one user.
   (c) Accept it and rely on the confirmation step.
   *Recommendation: (a)*, after R5 confirms the problem.
+  **Resolved 2026-10-08: (a).** R5 proposed exact duplicates of R1's blocks. `plan_my_day` step 2 now also
+  reads `calendars.write` and passes those events as busy; step 5 lists them as already planned and stops
+  when there's nothing new (spec 02 §7 updated). Re-run R5 to check.
 - **Q3. Should R3's guardrail gap be closed?** If R3 targets primary, options are a project `CLAUDE.md`
   note with D3 and the MCP Test ID, or stronger wording in the `find_focus_blocks` description.
   *Recommendation: decide after R3; a `CLAUDE.md` note is the cheapest.*
