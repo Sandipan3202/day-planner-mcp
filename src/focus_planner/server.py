@@ -14,10 +14,13 @@ from typing import Annotated
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ResourceError, ToolError
+from mcp.shared.exceptions import MCPError
+from mcp_types import INTERNAL_ERROR, INVALID_PARAMS
 from pydantic import BaseModel, Field
 
 from focus_planner import planner
 from focus_planner.preferences import PreferencesError, load_preferences
+from focus_planner.prompts import PromptArgumentError, render_plan_my_day
 
 # stdout is the protocol channel, so all logs go to stderr.
 logging.basicConfig(
@@ -152,11 +155,28 @@ def find_focus_blocks(
     return FocusPlan.model_validate(result)
 
 
-@server.prompt()
-def plan_my_day(date: str = "today") -> str:
-    """Placeholder. The real workflow text (spec §7) comes in the implementation step."""
-    log.info("prompt get: plan_my_day date=%s (stub)", date)
-    return f"(stub) Plan my day for {date}."
+@server.prompt(
+    description="Plan my focus time for a day: fetch events, find focus blocks, confirm with me, "
+    "then create them on my MCP Test calendar and read them back."
+)
+def plan_my_day(
+    date: Annotated[str, Field(description="'today', 'tomorrow' or YYYY-MM-DD (preferences time zone).")] = "today",
+) -> str:
+    started = time.perf_counter()
+    try:
+        text = render_plan_my_day(date, load_preferences())
+    except (PromptArgumentError, PreferencesError) as e:
+        log.info("prompt get: plan_my_day date=%s -> error", date)
+        # A protocol error with our message: bad argument -> invalid params, bad preferences file -> internal.
+        code = INVALID_PARAMS if isinstance(e, PromptArgumentError) else INTERNAL_ERROR
+        raise MCPError(code=code, message=str(e)) from e
+    log.info(
+        "prompt get: plan_my_day date=%s -> %d chars in %.1f ms",
+        date,
+        len(text),
+        (time.perf_counter() - started) * 1000,
+    )
+    return text
 
 
 def run() -> None:
