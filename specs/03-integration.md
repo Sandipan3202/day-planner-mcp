@@ -104,7 +104,7 @@ proposes `primary` (or no `calendarId`) for a write, answer **no** and log it.
 | Run | Input | Tool calls + key args (both servers) | Result | Surprises / notes |
 |---|---|---|---|---|
 | P3 (2026-10-08) | Probe on MCP Test, Sat Oct 10 10:00–10:30 | 1) `create_event`, `calendarId <MCP Test>`, `eventType FOCUS_TIME`, `notificationLevel NONE` → **error "Request contains an invalid argument."** 2) Control: same call without `eventType` → created (`eventType DEFAULT`, organizer MCP Test). 3) `delete_event` → `cancelled`; `list_events` `fullText "[MCP]"` on MCP Test for October → none | **FOCUS_TIME is rejected on MCP Test**, and only the event type differs between the two calls. Spec 02 step 6 can't work as written. | Fits Google's rule that focus time goes only on a primary calendar, but the error message doesn't say why. Not tried on primary (D3). Side findings: MCP Test has no leftover `[MCP]` events (P2 clean for that calendar). The connector's schema now says to pass `startTime`/`endTime` as **local time with no offset** (it fills in the zone), which differs from what Phase 1 recorded. |
-| R1 | | | | |
+| R1 (2026-10-08) | `/mcp__focus-planner__plan_my_day 2026-10-09` (Fri) | 1) `list_events` primary, `startTime 2026-10-09T00:00:00+05:30`, `endTime 2026-10-10T00:00:00+05:30`, `orderBy startTime` → 4 events. 2) `find_focus_blocks` with all 4: 07:00–08:00, 09:00–10:00, 18:00–19:00 `busy true`; "Tavel SVTM" 14:00–17:00 `busy false` (Task: `transparent` + `AVAILABILITY_FREE`, `eventType FOCUS_TIME`). → blocks 10:10–12:10 and 13:40–15:40 (120 min each); skipped 12:10–12:20 and 17:40–17:50 (<60 min); notes: 1 free event ignored, cap 2 hit. 3) Plan shown, I said yes. 4) `create_event` ×2, `calendarId <MCP Test>`, local times with no offset + `timeZone Asia/Kolkata`, `availability AVAILABILITY_BUSY`, `notificationLevel NONE`, no `eventType`. 5) `list_events` MCP Test for Oct 9 → both blocks. Plus `list_events` `fullText "[MCP]"` on primary for Oct 9 → none. | **Pass.** Calls followed §2 in order. The blocks match `find_focus_blocks` exactly; 4 events in, 4 events passed. Both exist on MCP Test (`eventType DEFAULT`, organizer MCP Test) with the right times and title. | Block 2 overlaps the free Task "Tavel SVTM". The rules allow that, but it may be real travel: should Tasks count as busy? The prompt's step 2 uses `+05:30` offsets, while the connector schema asks for no offset; both worked. `availability` isn't returned in the response or the read-back, so busy can only be inferred (no `transparency` field, so opaque). |
 | R2 | | | | |
 | R3 | | | | |
 | R4 | | | | |
@@ -112,11 +112,11 @@ proposes `primary` (or no `calendarId`) for a write, answer **no** and log it.
 
 ## 7. Acceptance criteria (S3)
 
-- [ ] C1. R1: one prompt produces calls to **both** servers in the order of §2, and the proposed blocks equal
+- [x] C1. R1: one prompt produces calls to **both** servers in the order of §2, and the proposed blocks equal
       `find_focus_blocks`' output for the real events (no blocks lost, invented or moved by the model).
-- [ ] C2. R1: the events Claude passed match `list_events` output: same count, `busy` set by the rules
+- [x] C2. R1: the events Claude passed match `list_events` output: same count, `busy` set by the rules
       (free Tasks are `busy: false`).
-- [ ] C3. R1: after a yes, the blocks exist on **MCP Test** with the right times and title, and the read-back
+- [x] C3. R1: after a yes, the blocks exist on **MCP Test** with the right times and title, and the read-back
       reports what's really there.
 - [ ] C4. R2 and R4: no writes happened.
 - [ ] C5. No `[MCP]` event was ever written to primary (check with `list_events` + `fullText "[MCP]"` on primary).
