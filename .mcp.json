@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "focus-planner": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "python",
+        "-m",
+        "focus_planner"
+      ],
+      "env": {}
+    }
+  }
+}
