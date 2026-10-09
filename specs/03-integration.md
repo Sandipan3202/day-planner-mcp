@@ -110,6 +110,7 @@ proposes `primary` (or no `calendarId`) for a write, answer **no** and log it.
 | R4a (2026-10-08) | `/mcp__focus-planner__plan_my_day 2026-10-10` (Sat) | Prompt added a heads-up that Sat isn't a working day. 1) `list_events` primary, Oct 10 full day → 0 events. 2) `find_focus_blocks` with `events []` → `working_day false`, no blocks, note "not a working day". 3) No confirmation asked, no `create_event`. Check: `list_events` MCP Test for Oct 10 → none; calendar `updated` still 16:01:51Z. | **Pass.** No blocks, no writes. | The prompt flags the non-working day on its own, before any tool call. Claude still ran steps 2 to 4 as written instead of stopping early. That's harmless, but it costs one call to each server. |
 | R4b (2026-10-08) | `/mcp__focus-planner__plan_my_day 2026-10-08` (Thu, run at 21:35) | 1) `list_events` primary, Oct 8 full day → 0 events. 2) `find_focus_blocks` with `events []` (no `now` passed) → `working_day true`, no blocks, note "It is already 21:35, after working hours end (18:30)". 3) No confirmation asked, no `create_event`. Check: `list_events` MCP Test for Oct 8 → none; calendar `updated` still 16:01:51Z. | **Pass.** No blocks, no writes. | The server used its own clock for `now`, and its 21:35 matched the real local time, so the time-zone handling is right. Unlike the Saturday case, the prompt gave no heads-up here; only the tool knew it was too late. |
 | R5 (2026-10-08) | `/mcp__focus-planner__plan_my_day 2026-10-09` again, after R1's blocks existed; answered **no** | 1) `list_events` primary, Oct 9 → the same 4 events as R1 (MCP Test not read). 2) `find_focus_blocks` with the same 4 events → the same blocks, 10:10–12:10 and 13:40–15:40. 3) Plan shown with a duplicate warning, I said no. 4) No `create_event`. Check: `list_events` MCP Test for Oct 9 → still only R1's 2 events (same IDs), calendar `updated` still 16:01:51Z. | **Problem confirmed (Q2).** The flow proposes exact duplicates of blocks that already exist. Only the confirmation step stopped the write. | Claude warned about the duplicates only because R1 was earlier in the same session, not because of anything in the flow. A fresh session would propose them with no warning. Supports Q2 (a): also read `calendars.write` and pass those events as busy. |
+| R5b (2026-10-08) | `/mcp__focus-planner__plan_my_day 2026-10-09` after the Q2 (a) fix (`9a93525`); answered **no**. Same session as the run above, not a fresh one. | 1) `list_events` primary, Oct 9 → the same 4 events. 2) `list_events` MCP Test, Oct 9 → R1's 2 blocks. 3) `find_focus_blocks` with 6 events (R1's 2 blocks `busy true`, "Tavel SVTM" `busy false`) → **one new block, 15:50–17:50** (120 min); no skipped gaps; note: 1 free event ignored. 4) Plan shown with the 2 existing blocks listed as already planned, I said no. 5) No `create_event`. Check: `list_events` MCP Test for Oct 9 → still only R1's 2 events (same IDs), calendar `updated` still 16:01:51Z. | **Duplicates fixed, new problem found.** The existing blocks count as taken, so they aren't proposed again. But the flow proposed a **third** block, which breaks `max_focus_blocks_per_day: 2`. | `find_focus_blocks` can't tell an earlier focus block from a meeting, so it applies the cap only to the blocks it proposes in that call. Fixing this needs the server to count existing `[MCP] Focus block` events toward the cap, which is close to Q2 (b). See Q4. |
 
 ## 7. Acceptance criteria (S3)
 
@@ -161,6 +162,14 @@ proposes `primary` (or no `calendarId`) for a write, answer **no** and log it.
 - **Q3. Should R3's guardrail gap be closed?** If R3 targets primary, options are a project `CLAUDE.md`
   note with D3 and the MCP Test ID, or stronger wording in the `find_focus_blocks` description.
   *Recommendation: decide after R3; a `CLAUDE.md` note is the cheapest.*
+- **Q4. The daily cap ignores blocks that are already planned (R5b).** After Q2 (a), a re-run proposes new
+  blocks in the remaining gaps, up to the cap *again*. Options:
+  (a) Have `find_focus_blocks` count busy events titled `focus_event_title` toward
+      `max_focus_blocks_per_day`, and return a note when the cap is already used up. Small server change
+      plus a test.
+  (b) Add an optional `already_planned` count argument that the prompt fills in from the MCP Test read.
+  (c) Accept it and rely on the confirmation step.
+  *Recommendation: (a)*. The rule stays in the server, and the prompt doesn't change.
 
 ## 11. Out of scope
 
