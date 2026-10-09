@@ -172,6 +172,15 @@ def test_r5b_existing_blocks_use_up_the_cap():
     assert "No free gap long enough for a focus block." not in r["notes"]
 
 
+def test_r5c_cap_is_reported_even_after_working_hours():
+    events = [ev(FRI, "10:10", "12:10", title="[MCP] Focus block"), ev(FRI, "13:40", "15:40", title="[MCP] Focus block")]
+    r = plan(events, day=FRI, now=f"{FRI}T21:32:00+05:30")
+    # Before, the after-hours check returned first and the cap note never showed.
+    assert r["blocks"] == []
+    assert "Daily cap already used up: no new focus blocks." in r["notes"]
+    assert not any("after working hours" in n for n in r["notes"])
+
+
 def test_one_existing_block_leaves_room_for_one_more():
     r = plan([ev(THU, "09:30", "11:30", title="[MCP] Focus block")])
     # Free gaps after it: 11:40-12:20 (skipped), 13:40-18:30 -> two 120-min blocks fit, only one is left in the cap.

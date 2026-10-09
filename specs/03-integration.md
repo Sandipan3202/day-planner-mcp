@@ -172,8 +172,10 @@ proposes `primary` (or no `calendarId`) for a write, answer **no** and log it.
   (c) Accept it and rely on the confirmation step.
   *Recommendation: (a)*. The rule stays in the server, and the prompt doesn't change.
   **Resolved 2026-10-09: (a).** `find_focus_blocks` now counts busy events on `date` titled `focus_event_title`
-  toward the cap, and returns no blocks plus a note when it's used up (spec 02 §6 step 7, tests in
+  toward the cap, and returns no blocks plus a note when it's used up (spec 02 §6 step 2, tests in
   `tests/test_planner.py`). Re-run R5 to check (R5c).
+  R5c (late on the day) hit the after-hours check first, so the cap check moved ahead of it (now step 2).
+  Re-run R5c on a day that isn't over yet to see the cap note in a real run.
 
 ## 11. Out of scope
 

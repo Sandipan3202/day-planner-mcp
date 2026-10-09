@@ -32,7 +32,7 @@ def find_focus_blocks(
     min_minutes: int | None = None,
     now: str | None = None,
 ) -> dict[str, Any]:
-    """Return focus blocks for one day, following spec §6 steps 1-7.
+    """Return focus blocks for one day, following spec §6 steps 1-8.
 
     `preferences` must already be validated (see preferences.validate_preferences).
     `events` items have `start`, `end`, optional `busy` (default True) and `title`.
@@ -80,7 +80,24 @@ def find_focus_blocks(
         notes.append(f"{day.isoformat()} is a {day_name}, which is not a working day. No focus blocks planned.")
         return result
 
-    # --- Step 2: the window, trimmed by `now` if it falls on this date.
+    # --- Step 2: the cap. Focus blocks already on the calendar (busy, titled focus_event_title, starting on this
+    # date) use it up. Checked before `now`, so a re-run late in the day still says the cap is the reason.
+    cap = preferences["max_focus_blocks_per_day"]
+    focus_title = preferences["focus_event_title"]
+    existing = sum(
+        1 for ev in parsed if ev["busy"] and ev["title"] == focus_title and ev["start"].astimezone(tz).date() == day
+    )
+    left = max(cap - existing, 0)
+    if existing:
+        notes.append(
+            f"{_plural(existing, 'existing focus block')} ({_quote(focus_title)}) already "
+            f"{'counts' if existing == 1 else 'count'} toward the daily cap of {cap}."
+        )
+    if not left:
+        notes.append("Daily cap already used up: no new focus blocks.")
+        return result
+
+    # --- Step 3: the window, trimmed by `now` if it falls on this date.
     hours = preferences["working_hours"]
     win_start = _at(day, hours["start"], tz)
     win_end = _at(day, hours["end"], tz)
@@ -94,7 +111,7 @@ def find_focus_blocks(
             return result
         win_start = max(win_start, rounded)
 
-    # --- Step 3: busy intervals = busy events + lunch.
+    # --- Step 4: busy intervals = busy events + lunch.
     busy: list[Interval] = [(ev["start"], ev["end"]) for ev in parsed if ev["busy"]]
     lunch = preferences["lunch"]
     busy.append((_at(day, lunch["start"], tz), _at(day, lunch["end"], tz)))
@@ -102,18 +119,18 @@ def find_focus_blocks(
     if all_day:
         notes.append(f"All-day busy event blocks the whole day: {', '.join(_quote(t) for t in all_day)}")
 
-    # --- Step 4: grow by the buffer, merge, then clip to the window.
+    # --- Step 5: grow by the buffer, merge, then clip to the window.
     grown = _merge([(s - buffer, e + buffer) for s, e in busy])
     clipped = [(max(s, win_start), min(e, win_end)) for s, e in grown]
     clipped = [(s, e) for s, e in clipped if s < e]
 
-    # --- Step 5: free gaps, dropping the short ones.
+    # --- Step 6: free gaps, dropping the short ones.
     blocks: list[Interval] = []
     for gap_start, gap_end in _gaps(win_start, win_end, clipped):
         if _minutes(gap_start, gap_end) < minimum:
             result["skipped"].append(_skipped(gap_start, gap_end, f"shorter than {minimum} min", tz))
             continue
-        # --- Step 6: cut the gap into blocks; a leftover of at least the minimum is a shorter block.
+        # --- Step 7: cut the gap into blocks; a leftover of at least the minimum is a shorter block.
         cursor = gap_start
         step = timedelta(minutes=block_len)
         while cursor + step <= gap_end:
@@ -125,23 +142,8 @@ def find_focus_blocks(
             else:
                 result["skipped"].append(_skipped(cursor, gap_end, f"leftover shorter than {minimum} min", tz))
 
-    # --- Step 7: cap, keeping the longest (ties: earlier), then sort by start.
-    # Focus blocks already on the calendar (busy, titled focus_event_title, starting on this date) use up the cap too.
-    cap = preferences["max_focus_blocks_per_day"]
-    focus_title = preferences["focus_event_title"]
-    existing = sum(
-        1 for ev in parsed if ev["busy"] and ev["title"] == focus_title and ev["start"].astimezone(tz).date() == day
-    )
-    left = max(cap - existing, 0)
-    if existing:
-        notes.append(
-            f"{_plural(existing, 'existing focus block')} ({_quote(focus_title)}) already "
-            f"{'counts' if existing == 1 else 'count'} toward the daily cap of {cap}."
-        )
-    if existing and not left:
-        notes.append("Daily cap already used up: no new focus blocks.")
-        blocks = []
-    elif len(blocks) > left:
+    # --- Step 8: keep what's left of the cap, longest first (ties: earlier), then sort by start.
+    if len(blocks) > left:
         dropped = len(blocks) - left
         blocks = sorted(blocks, key=lambda b: (-(b[1] - b[0]), b[0]))[:left]
         notes.append(f"{_plural(dropped, 'more block')} would fit, but the daily cap is {cap}.")
@@ -150,7 +152,7 @@ def find_focus_blocks(
     result["blocks"] = [
         {"start": _iso(s, tz), "end": _iso(e, tz), "minutes": _minutes(s, e)} for s, e in blocks
     ]
-    if not blocks and not all_day and left:
+    if not blocks and not all_day:
         notes.append("No free gap long enough for a focus block.")
     return result
 
