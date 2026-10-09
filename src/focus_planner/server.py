@@ -66,7 +66,11 @@ class Event(BaseModel):
         description='false if transparency == "transparent", or availability == "AVAILABILITY_FREE", '
         "or I declined the event. Otherwise true.",
     )
-    title: str | None = Field(default=None, description="The event summary. Only used to explain results.")
+    title: str | None = Field(
+        default=None,
+        description="The event summary. Used to explain results, and busy events titled like "
+        "focus_event_title count toward the daily cap.",
+    )
 
 
 class Block(BaseModel):
@@ -104,6 +108,8 @@ Convert each event from list_events like this:
     * I declined the event (my attendee responseStatus == "declined")
 - title: summary.
 Pass every event of the day, including free ones (they are reported in notes, not treated as busy).
+Also pass focus blocks already on the write calendar: busy events titled focus_event_title count toward
+max_focus_blocks_per_day, so a re-run doesn't go over the cap.
 
 Returns blocks (ready for create_event), the gaps it skipped and why, and notes.
 Times are in the preferences time zone."""

@@ -146,7 +146,7 @@ that Phase 1 showed don't survive between sessions.
 | `start` | ISO 8601 datetime with offset, or `YYYY-MM-DD` for all-day | yes | `start.dateTime`, or `start.date` |
 | `end` | same | yes | `end.dateTime`, or `end.date` |
 | `busy` | boolean | no, default `true` | `false` if `transparency == "transparent"` or `availability == "AVAILABILITY_FREE"`, or if I declined |
-| `title` | string | no | `summary`, only used to explain results |
+| `title` | string | no | `summary`. Used to explain results; busy events titled `focus_event_title` also count toward the daily cap (step 7) |
 
 **Why a simplified `Event` and not Google's raw format** (an L4 decision): a small, clear schema keeps this
 server independent of Google, makes the tool easy to test in the Inspector by hand, and the
@@ -183,7 +183,9 @@ Structured JSON (also returned as text for clients that only show text):
 4. Grow each busy interval by `buffer_minutes` on both sides, then merge again.
 5. Free gaps = window minus busy. Drop gaps shorter than the minimum, recording them in `skipped`.
 6. Split each gap into blocks of `focus_block_minutes`. A leftover piece of at least the minimum becomes a shorter block.
-7. Keep the `max_focus_blocks_per_day` longest blocks (ties go to the earlier one), then sort by start time.
+7. Count the busy events on `date` titled `focus_event_title` (focus blocks already planned) toward
+   `max_focus_blocks_per_day`. Keep the longest blocks that still fit under the cap (ties go to the earlier one),
+   then sort by start time. If the cap is already used up, return no blocks and a note (spec 03 Q4).
 
 ### Errors
 
@@ -208,6 +210,7 @@ The server must not crash. Cases:
 | `now` after working hours | No blocks, with a note |
 | Events in another time zone's offset | Converted correctly |
 | Gap of exactly `min_minutes` | Included |
+| Busy events titled `focus_event_title` already fill the cap (spec 03 R5b) | No blocks, with a note |
 
 ## 7. Prompt: `plan_my_day`
 

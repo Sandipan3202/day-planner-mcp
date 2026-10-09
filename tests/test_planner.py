@@ -152,6 +152,42 @@ def test_b3_friday_oct_9():
     assert '1 event ignored: marked free ("Task")' in r["notes"]
 
 
+# --- Q4: existing focus blocks count toward the cap (spec 03 R5b) -----------
+
+
+def test_r5b_existing_blocks_use_up_the_cap():
+    events = [
+        ev(FRI, "07:00", "08:00", title="Early"),
+        ev(FRI, "09:00", "10:00", title="travel to SSB"),
+        ev(FRI, "14:00", "17:00", busy=False, title="Task"),
+        ev(FRI, "18:00", "19:00", title="Evening"),
+        ev(FRI, "10:10", "12:10", title="[MCP] Focus block"),
+        ev(FRI, "13:40", "15:40", title="[MCP] Focus block"),
+    ]
+    r = plan(events, day=FRI)
+    # Before Q4 this proposed a third block, 15:50-17:50.
+    assert r["blocks"] == []
+    assert any("2 existing focus blocks" in n for n in r["notes"])
+    assert "Daily cap already used up: no new focus blocks." in r["notes"]
+    assert "No free gap long enough for a focus block." not in r["notes"]
+
+
+def test_one_existing_block_leaves_room_for_one_more():
+    r = plan([ev(THU, "09:30", "11:30", title="[MCP] Focus block")])
+    # Free gaps after it: 11:40-12:20 (skipped), 13:40-18:30 -> two 120-min blocks fit, only one is left in the cap.
+    assert spans(r["blocks"]) == [("13:40", "15:40")]
+    assert any("1 existing focus block" in n for n in r["notes"])
+    assert any("daily cap is 2" in n for n in r["notes"])
+
+
+def test_free_or_differently_titled_blocks_do_not_count_toward_the_cap():
+    events = [
+        ev(THU, "09:30", "11:30", title="[MCP] Focus block", busy=False),
+        ev(THU, "16:00", "17:00", title="Focus block"),
+    ]
+    assert len(plan(events)["blocks"]) == 2
+
+
 # --- Bad input ---------------------------------------------------------------
 
 

@@ -170,6 +170,9 @@ proposes `primary` (or no `calendarId`) for a write, answer **no** and log it.
   (b) Add an optional `already_planned` count argument that the prompt fills in from the MCP Test read.
   (c) Accept it and rely on the confirmation step.
   *Recommendation: (a)*. The rule stays in the server, and the prompt doesn't change.
+  **Resolved 2026-10-09: (a).** `find_focus_blocks` now counts busy events on `date` titled `focus_event_title`
+  toward the cap, and returns no blocks plus a note when it's used up (spec 02 §6 step 7, tests in
+  `tests/test_planner.py`). Re-run R5 to check (R5c).
 
 ## 11. Out of scope
 
